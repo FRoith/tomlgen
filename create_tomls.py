@@ -372,7 +372,6 @@ def make_tests(instr_dict, sets, testfilename):
     f = open("/tmp/rvobj", "wb")
     splitsets = [s.split('_')[1].capitalize() for s in sets]
     extensions_loc = [ex for ex in splitsets if ex != "I"]
-    print(instr_dict)
 
     for instr in instr_dict:
         mask = int(instr_dict[instr]['mask'], base=0)
@@ -435,12 +434,13 @@ def main():
     instr_dict_toml = dict(sorted(instr_dict_toml.items()))
 
     make_toml(instr_dict_toml, args.extensions, args.outfilename, version_infos)
-    logging.info('instr-table.toml generated successfully')
+    logging.info(args.outfilename + ' generated successfully')
 
     if args.test:
         instr_dict_toml = parse.create_inst_dict(args.extensions, False, include_pseudo_ops=emitted_pseudo_ops)
         instr_dict_toml = dict(sorted(instr_dict_toml.items()))
-        make_tests(instr_dict, sets, args.testfilename)
+        make_tests(instr_dict_toml, args.extensions, args.testfilename)
+        logging.info(args.testfilename + ' generated successfully')
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,4 @@
 .env
 __pycache__
 instr-table.toml
+tests.test
