@@ -368,7 +368,7 @@ def make_toml(instr_dict, sets, outfilename, version_infos):
     toml.dump(full_toml, of, TomlHexEncoder())
     of.close()
 
-def make_tests(instr_dict, sets):
+def make_tests(instr_dict, sets, testfilename):
     f = open("/tmp/rvobj", "wb")
     splitsets = [s.split('_')[1].capitalize() for s in sets]
     extensions_loc = [ex for ex in splitsets if ex != "I"]
@@ -385,7 +385,7 @@ def make_tests(instr_dict, sets):
             f.write(field.to_bytes(4, byteorder="little"))
     f.close()
     subprocess.call(f"llvm-objcopy -I binary -O elf{32 if IS_32_BIT else 64}-littleriscv --rename-section=.data=.text,code /tmp/rvobj /tmp/rvelf", shell=True)
-    subprocess.call(f"llvm-objdump{' --mattr=+' + ',+'.join(extensions_loc) if len(extensions_loc) > 0 else ''} -d -Mno-aliases /tmp/rvelf | tail -n +10 | grep -v -E '<unknown>' | awk -f reformat.awk > tests.test", shell=True)
+    subprocess.call(f"llvm-objdump{' --mattr=+' + ',+'.join(extensions_loc) if len(extensions_loc) > 0 else ''} -d -Mno-aliases /tmp/rvelf | tail -n +10 | grep -v -E '<unknown>' | awk -f reformat.awk > " + testfilename, shell=True)
 
 def main():
     global IS_32_BIT
@@ -393,6 +393,7 @@ def main():
     parser.add_argument("-test", action="store_true", help="Generate tests")
     parser.add_argument("-b32", action="store_true", help="Tell LLVM to use 32 bit instruction decoding instead of 64 bit (used for correct generation of RV32 instruction sets)")
     parser.add_argument("-o", "--outfilename", type=str, help="Filename of output file to put toml data into.", default="instr-table.toml")
+    parser.add_argument("-t", "--testfilename", type=str, help="Filename of output file to put test file data into.", default="tests.test")
     parser.add_argument(
         "extensions",
         nargs="*",
@@ -437,7 +438,9 @@ def main():
     logging.info('instr-table.toml generated successfully')
 
     if args.test:
-        pass
+        instr_dict_toml = parse.create_inst_dict(args.extensions, False, include_pseudo_ops=emitted_pseudo_ops)
+        instr_dict_toml = dict(sorted(instr_dict_toml.items()))
+        make_tests(instr_dict, sets, args.testfilename)
 
 if __name__ == "__main__":
     main()
