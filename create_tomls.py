@@ -238,10 +238,10 @@ def make_toml(instr_dict, sets, outfilename, version_infos):
             new_type_dict[f"{typ}@{orig_choice}"] = f"{type_dict[typ]}-{orig_choice}"
     type_dict = new_type_dict
 
-    full_toml["types"] = {}
-    full_toml["types"]["names"] = []        
+    full_toml["formats"] = {}
+    full_toml["formats"]["names"] = []        
 
-    full_toml["types"]["parts"] = []
+    full_toml["formats"]["parts"] = []
 
     for lut in my_lut:
         rts = data_types[lut]
@@ -249,24 +249,24 @@ def make_toml(instr_dict, sets, outfilename, version_infos):
         if lut in imm_mappings:
             continue # skip adding part type if imm
         if len(rts) == 0:
-            full_toml["types"]["parts"].append([lut, my_lut[lut][0]-my_lut[lut][1]+1, "VInt"])
+            full_toml["formats"]["parts"].append([lut, my_lut[lut][0]-my_lut[lut][1]+1, "VInt"])
         elif len(rts) == 1:
             for mapping in Mappings:
                     if rts[0] == mapping["name"]:
                         mapping["use"] = True
-            full_toml["types"]["parts"].append([lut, my_lut[lut][0]-my_lut[lut][1]+1, rts[0]])
+            full_toml["formats"]["parts"].append([lut, my_lut[lut][0]-my_lut[lut][1]+1, rts[0]])
         else:
             for rt in rts:
                 for mapping in Mappings:
                     if rt == mapping["name"]:
                         mapping["use"] = True
-                full_toml["types"]["parts"].append([f"{lut}_{rt}", my_lut[lut][0]-my_lut[lut][1]+1, rt])
-    full_toml["types"]["parts"].append(["none", 32, "u32"])
-    full_toml["types"]["parts"].append(["imm", 32, "VInt"])
-    full_toml["types"]["parts"].append(["himm", 32, "VInt", "hex"])
+                full_toml["formats"]["parts"].append([f"{lut}_{rt}", my_lut[lut][0]-my_lut[lut][1]+1, rt])
+    full_toml["formats"]["parts"].append(["none", 32, "u32"])
+    full_toml["formats"]["parts"].append(["imm", 32, "VInt"])
+    full_toml["formats"]["parts"].append(["himm", 32, "VInt", "hex"])
 
-    full_toml["type"] = {}
-    full_toml["type"]["names"] = []
+    full_toml["types"] = {}
+    full_toml["types"]["names"] = []
     found = set()
     for part_type in my_part_types:
         all_matches = [(instr, part_type) for instr in instr_dict if part_type.startswith(f'{"-".join(instr_dict[instr]["variable_fields"])}@')]
@@ -309,7 +309,7 @@ def make_toml(instr_dict, sets, outfilename, version_infos):
         if len(cool_matches) == 0:
             continue
 
-        full_toml["types"]["names"].append(type_dict[part_type].replace('type', 'format'))
+        full_toml["formats"]["names"].append(type_dict[part_type].replace('type', 'format'))
         full_toml[format_name] = {"type": type_dict[part_type]}
         full_toml[format_name]["repr"] = {}
         full_toml[format_name]["instructions"] = {}
@@ -325,8 +325,8 @@ def make_toml(instr_dict, sets, outfilename, version_infos):
         if len(full_toml[format_name]["instructions"]) == 0:
             continue
 
-        full_toml["type"]["names"].append(type_dict[part_type])
-        full_toml["type"][type_dict[part_type]] = []
+        full_toml["types"]["names"].append(type_dict[part_type])
+        full_toml["types"][type_dict[part_type]] = []
         for sub_type in my_part_types[part_type]:
             if sub_type[0] in imm_mappings:
                 for mapping in imm_mappings[sub_type[0]]:
@@ -334,13 +334,13 @@ def make_toml(instr_dict, sets, outfilename, version_infos):
                     p["name"] = "imm"
                     p["top"] = mapping[0]
                     p["bot"] = mapping[1]
-                    full_toml["type"][type_dict[part_type]].append(p)
+                    full_toml["types"][type_dict[part_type]].append(p)
             else:
                 p = {}
                 p["name"] = sub_type[0]
                 p["top"] = sub_type[1]
                 p["bot"] = sub_type[2]
-                full_toml["type"][type_dict[part_type]].append(p)      
+                full_toml["types"][type_dict[part_type]].append(p)      
 
         cool_counter = Counter(cool_matches.values())
         if len(cool_counter) == 2 and "<unknown>" in cool_counter: # if only one choice for unknown repr, just assume
